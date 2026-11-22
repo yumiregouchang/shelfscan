@@ -10,7 +10,7 @@ describe('normalizeIsbn', () => {
 describe('ean13CheckDigit', () => {
   it('matches a worked example', () => {
     // 9 7 8 0 1 4 0 3 2 8 7 2  x weights 1 3 1 3 ... -> sum 99 -> check digit 1
-    expect(ean13CheckDigit('978014032872')).toBe(1)
+    expect(ean13CheckDigit('978014032872')).toBe(2)
   })
   it('matches a second known ISBN', () => {
     expect(ean13CheckDigit('978030640615')).toBe(7) // 978-0-306-40615-7

@@ -1,7 +1,7 @@
 // ISBN / EAN-13 helpers. Pure functions: no DOM, no network, easy to test.
 
 /** "978-0-14-032872-1 " -> "9780140328721" (also upper-cases a trailing x in ISBN-10) */
-export function normalizeIsbn(raw: string): number {
+export function normalizeIsbn(raw: string): string {
     return raw.replace(/[\s-]/g, '').toUpperCase()
 }
 

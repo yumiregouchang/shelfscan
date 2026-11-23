@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { addBook, loadBooks, removeBook, saveBooks, searchBooks, type Book } from './lib/books'
 import { toIsbn13 } from './lib/isbn'
 import { lookupIsbn } from './lib/openLibrary'
 import { BookList } from './components/BookList'
 import { IsbnForm } from './components/IsbnForm'
-import { Scanner } from './components/Scanner'
 import './App.css'
 
+const Scanner = lazy(() => import('./components/Scanner').then((m) => ({ default: m.Scanner })))
 const THRESHOLD_KEY = 'shelfscan.blurThreshold'
 const DEFAULT_THRESHOLD = 100
 
@@ -70,7 +70,11 @@ function App() {
       <button type="button" className="primary" onClick={() => setScanning((s) => !s)}>
         {scanning ? 'Stop scanning' : 'Scan barcode'}
       </button>
-      {scanning && <Scanner onDetected={handleCode} blurThreshold={threshold} />}
+      {scanning && (
+        <Suspense fallback={<p>Loading scanner…</p>}>
+          <Scanner onDetected={handleCode} blurThreshold={threshold} />
+        </Suspense>
+      )}
       {scanning && (
         <label className="threshold">
           Blur threshold {threshold}

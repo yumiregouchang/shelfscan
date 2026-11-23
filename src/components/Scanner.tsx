@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
+import { measureSharpness, SAMPLE_HEIGHT, SAMPLE_WIDTH } from '../lib/frame'
 
 interface Props {
   onDetected: (code: string) => void
+  blurThreshold: number
 }
 
 /** Turn the error from getUserMedia into something a user can act on. */
@@ -15,9 +17,10 @@ function cameraErrorMessage(err: unknown): string {
   return `Could not open the camera: ${String(err)}`
 }
 
-export function Scanner({ onDetected }: Props) {
+export function Scanner({ onDetected, blurThreshold }: Props) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const [error, setError] = useState<string | null>(null)
+    const [sharpness, setSharpness] = useState<number | null>(null)
 
     // Keep the latest callback in a ref, so the camera effect below can run only once.
     const onDetectedRef = useRef(onDetected)
@@ -53,17 +56,40 @@ export function Scanner({ onDetected }: Props) {
       }
     }, [])
 
+    // 2) Every 300 ms, measure how sharp the centre of the picture is.
+    useEffect(() => {
+      const canvas = document.createElement('canvas')
+      canvas.width = SAMPLE_WIDTH
+      canvas.height = SAMPLE_HEIGHT
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      const timer = setInterval(() => {
+        const video = videoRef.current
+        if (!ctx || !video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+        setSharpness(measureSharpness(video, ctx))
+      }, 300)
+      return () => clearInterval(timer)
+    }, [])
+
+    const blurry = sharpness !== null && sharpness < blurThreshold
+
     return (
-        <div className="scanner">
-            {error ? (
-                <p className="error">{error}</p>
-            ) : (
-                <div className="viewfinder">
-                    <video ref={videoRef} muted playsInline />
-                    <div className="aim-box" />
-                </div>
-            )}
-            <p className="hint">Put the Barcode inside the box</p>
-        </div>
+      <div className="scanner">
+        {error ? (
+          <p className="error">{error}</p>
+        ) : (
+          <div className="viewfinder">
+            <video ref={videoRef} muted playsInline />
+            <div className={blurry ? 'aim-box blurry' : 'aim-box'} />
+          </div>
+        )}
+        <p className={blurry ? 'hint blurry' : 'hint'}>
+          {sharpness === null
+            ? 'Opening camera…'
+            : blurry
+              ? 'Too blurry: hold steady, or move back so the camera can focus'
+              : 'Put the barcode inside the box'}
+          <span className="score">Sharpness {sharpness === null ? '–' : Math.round(sharpness)}</span>
+        </p>
+      </div>
     )
 }

@@ -7,6 +7,9 @@ import { IsbnForm } from './components/IsbnForm'
 import { Scanner } from './components/Scanner'
 import './App.css'
 
+const THRESHOLD_KEY = 'shelfscan.blurThreshold'
+const DEFAULT_THRESHOLD = 100
+
 const FAILURE_TEXT = {
   'not-found': 'This book is not in Open Library.',
   network: "Can't reach Open Library. Check your connection.",
@@ -20,10 +23,12 @@ function App() {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [threshold, setThreshold] = useState(() => Number(localStorage.getItem(THRESHOLD_KEY)) || DEFAULT_THRESHOLD)
   const inFlight = useRef(new Set<string>()) // ISBNs being looked up right now
 
   // Save whenever the list changes.
   useEffect(() => saveBooks(books), [books])
+  useEffect(() => localStorage.setItem(THRESHOLD_KEY, String(threshold)), [threshold])
 
   const handleCode = useCallback(
     async (raw: string) => {
@@ -65,7 +70,20 @@ function App() {
       <button type="button" className="primary" onClick={() => setScanning((s) => !s)}>
         {scanning ? 'Stop scanning' : 'Scan barcode'}
       </button>
-      {scanning && <Scanner onDetected={handleCode} />}
+      {scanning && <Scanner onDetected={handleCode} blurThreshold={threshold} />}
+      {scanning && (
+        <label className="threshold">
+          Blur threshold {threshold}
+          <input
+            type="range"
+            min={10}
+            max={1000}
+            step={10}
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value))}
+          />
+        </label>
+      )}
       
       <IsbnForm onSubmit={handleCode} disabled={busy} />
       <p className="message" role="status">

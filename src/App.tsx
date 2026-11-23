@@ -4,6 +4,7 @@ import { toIsbn13 } from './lib/isbn'
 import { lookupIsbn } from './lib/openLibrary'
 import { BookList } from './components/BookList'
 import { IsbnForm } from './components/IsbnForm'
+import { Scanner } from './components/Scanner'
 import './App.css'
 
 const FAILURE_TEXT = {
@@ -18,6 +19,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [scanning, setScanning] = useState(false)
   const inFlight = useRef(new Set<string>()) // ISBNs being looked up right now
 
   // Save whenever the list changes.
@@ -59,7 +61,12 @@ function App() {
   return (
     <main>
       <h1>ShelfScan</h1>
-
+      
+      <button type="button" className="primary" onClick={() => setScanning((s) => !s)}>
+        {scanning ? 'Stop scanning' : 'Scan barcode'}
+      </button>
+      {scanning && <Scanner onDetected={handleCode} />}
+      
       <IsbnForm onSubmit={handleCode} disabled={busy} />
       <p className="message" role="status">
         {message}
